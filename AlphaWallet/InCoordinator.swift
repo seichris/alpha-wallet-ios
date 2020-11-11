@@ -139,6 +139,7 @@ class InCoordinator: NSObject, Coordinator {
         setupWatchingTokenScriptFileChangesToFetchEvents()
 
         urlSchemeCoordinator.processPendingURL(in: self)
+        Oneinch.fetchSupportedTokens()
     }
 
     func launchUniversalScanner() {
@@ -807,12 +808,25 @@ extension InCoordinator: UrlSchemeResolver {
 
 extension InCoordinator: TokensCoordinatorDelegate {
 
-    func didPressErc20ExchangeOnUniswap(for holder: UniswapHolder, in coordinator: TokensCoordinator) {
-        guard let url = holder.url else { return }
+    func didPressErc20Exchange(for service: ExchangeService, in coordinator: TokensCoordinator) {
+        guard let dappBrowserCoordinator = dappBrowserCoordinator else { return }
 
-        coordinator.navigationController.popViewController(animated: false)
+        let url: URL? = {
+            switch service {
+            case .uniswap(let service):
+                return service.url
+            case .oneinch(let service):
+                return service.url
+            }
+        }()
 
-        openURLInBrowser(url: url, forceReload: true)
+        if let url = url {
+            coordinator.navigationController.popViewController(animated: false)
+
+            showTab(.browser)
+
+            dappBrowserCoordinator.open(url: url, animated: true, forceReload: true)
+        }
     }
 
     func didPress(for type: PaymentFlow, server: RPCServer, in coordinator: TokensCoordinator) {

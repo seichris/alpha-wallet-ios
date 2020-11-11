@@ -21,7 +21,7 @@ enum ContractData {
 
 protocol SingleChainTokenCoordinatorDelegate: class, CanOpenURL {
     func tokensDidChange(inCoordinator coordinator: SingleChainTokenCoordinator)
-    func didPressErc20ExchangeOnUniswap(for holder: UniswapHolder, in coordinator: SingleChainTokenCoordinator)
+    func didPressErc20Exchange(for service: ExchangeService, in coordinator: SingleChainTokenCoordinator)
     func didPress(for type: PaymentFlow, inCoordinator coordinator: SingleChainTokenCoordinator)
     func didTap(transaction: Transaction, inViewController viewController: UIViewController, in coordinator: SingleChainTokenCoordinator)
     func didPostTokenScriptTransaction(_ transaction: SentTransaction, in coordinator: SingleChainTokenCoordinator)
@@ -550,39 +550,18 @@ extension SingleChainTokenCoordinator: TokensCardCoordinatorDelegate {
     }
 }
 
-extension TransactionType {
-
-    func uniswapHolder(theme: UniswapHolder.Theme) -> UniswapHolder {
-        switch self {
-        case .ERC20Token(let token, _, _):
-            return .init(input: .input(token.contractAddress), theme: theme)
-        case .ERC721Token, .ERC721ForTicketToken, .ERC875TokenOrder, .ERC875Token, .dapp, .nativeCryptocurrency, .tokenScript, .claimPaidErc875MagicLink:
-            return .init(input: .none, theme: theme)
-        }
-    }
-}
-
-extension UITraitCollection {
-    var uniswapTheme: UniswapHolder.Theme {
-        if #available(iOS 12.0, *) {
-            switch userInterfaceStyle {
-            case .dark:
-                return .dark
-            case .light, .unspecified:
-                return .light
-            }
-        } else {
-            return .light
-        }
-    }
-}
-
 extension SingleChainTokenCoordinator: TokenViewControllerDelegate {
+
+    func didTapErc20ExchangeOn1inch(forTransactionType transactionType: TransactionType, inViewController viewController: TokenViewController) {
+        guard let service = transactionType.oneinchService() else { return }
+        delegate?.didPressErc20Exchange(for: .oneinch(service), in: self)
+    }
 
     func didTapErc20ExchangeOnUniswap(forTransactionType transactionType: TransactionType, inViewController viewController: TokenViewController) {
         let theme = viewController.traitCollection.uniswapTheme
+        guard let service = transactionType.uniswapService(theme: theme) else { return }
 
-        delegate?.didPressErc20ExchangeOnUniswap(for: transactionType.uniswapHolder(theme: theme), in: self)
+        delegate?.didPressErc20Exchange(for: .uniswap(service), in: self)
     }
 
     func didTapSend(forTransactionType transactionType: TransactionType, inViewController viewController: TokenViewController) {
@@ -612,7 +591,7 @@ extension SingleChainTokenCoordinator: TokenViewControllerDelegate {
         switch action.type {
         case .tokenScript:
             showTokenInstanceActionView(forAction: action, fungibleTokenObject: token, viewController: viewController)
-        case .erc20Send, .erc20Receive, .nftRedeem, .nftSell, .nonFungibleTransfer, .erc20ExchangeOnUniswap:
+        case .erc20Send, .erc20Receive, .nftRedeem, .nftSell, .nonFungibleTransfer, .erc20ExchangeOnUniswap, .erc20ExchangeOn1inch:
             //Couldn't have reached here
             break
         }

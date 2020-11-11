@@ -7,6 +7,7 @@ import PromiseKit
 
 protocol TokenViewControllerDelegate: class, CanOpenURL {
     func didTapErc20ExchangeOnUniswap(forTransactionType transactionType: TransactionType, inViewController viewController: TokenViewController)
+    func didTapErc20ExchangeOn1inch(forTransactionType transactionType: TransactionType, inViewController viewController: TokenViewController)
     func didTapSend(forTransactionType transactionType: TransactionType, inViewController viewController: TokenViewController)
     func didTapReceive(forTransactionType transactionType: TransactionType, inViewController viewController: TokenViewController)
     func didTap(transaction: Transaction, inViewController viewController: TokenViewController)
@@ -200,17 +201,15 @@ class TokenViewController: UIViewController {
         delegate?.didTapReceive(forTransactionType: transactionType, inViewController: self)
     }
 
-    @objc private func erc20ExchangeOnUniswap() {
-        delegate?.didTapErc20ExchangeOnUniswap(forTransactionType: transactionType, inViewController: self)
-    }
-
     @objc private func actionButtonTapped(sender: UIButton) {
         guard let viewModel = viewModel else { return }
         let actions = viewModel.actions
         for (action, button) in zip(actions, buttonsBar.buttons) where button == sender {
             switch action.type {
             case .erc20ExchangeOnUniswap:
-                erc20ExchangeOnUniswap()
+                delegate?.didTapErc20ExchangeOnUniswap(forTransactionType: transactionType, inViewController: self)
+            case .erc20ExchangeOn1inch:
+                delegate?.didTapErc20ExchangeOn1inch(forTransactionType: transactionType, inViewController: self)
             case .erc20Send:
                 send()
             case .erc20Receive:
